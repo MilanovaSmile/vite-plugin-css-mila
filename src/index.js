@@ -61,6 +61,8 @@ export function CssMila (options = OPTIONS) {
 
                     let css = await readFile(src, 'utf8');
 
+                    css = replacePathWithAbsolutPath(css, config.root);
+
                     if (options.minify) {
                         let resultObject = await minifyCSS(css, options.minifyOptions);
 
@@ -127,6 +129,27 @@ function printLog (outDir, fileName, srcSize, destSize, maxFileNameLength) {
     destSize = (destSize / 1000).toFixed(2);
 
     console.log(dim(outDir) + cyan(fileName) + '  ' + dim(bold(srcSize + ' kB') + ' │ gzip: ' + destSize + ' kB'));
+}
+
+function replacePathWithAbsolutPath (css, rootDir) {
+    const regExp = /@import\s(?:url\()?\s?["'](.*?)["']\s?\)?[^;]*;?/gi;
+
+    let importArray = [];
+
+    css.replace(regExp, (match, url) => {
+        if (!url.includes('http')) {
+            importArray.push({
+                match: match,
+                new: match.replace(url, path.relative(process.cwd(), path.resolve(rootDir, url)))
+            });
+        }
+    });
+
+    importArray.forEach(element => {
+        css = css.replaceAll(element.match, element.new);
+    });
+
+    return css;
 }
 
 async function minifyCSS (src, options) {
