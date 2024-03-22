@@ -14,7 +14,8 @@ export default defineConfig({
                 inline: ['local']
             },
             targets: [
-                { src: 'index.css', dest: 'index.css' }
+                { src: 'index.css', dest: 'index.css' },
+                { src: 'fourth/fourth.css', dest: 'second.css' }
             ]
         })
     ]
