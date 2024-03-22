@@ -25,9 +25,8 @@
     }
   },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "vite build --config dev.vite.config.js",
+    "build": "vite build --config build.vite.config.js"
   },
   "devDependencies": {
     "vite": "^5.2.2"
