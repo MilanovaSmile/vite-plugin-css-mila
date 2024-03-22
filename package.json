@@ -30,11 +30,11 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "clean-css": "^5.3.2",
-    "colorette": "^2.0.20",
-    "vite": "^4.4.5"
+    "vite": "^5.2.2"
   },
-  "peerDependencies": {
-    "vite": "*"
+  "peerDependencies": {},
+  "dependencies": {
+    "clean-css": "^5.3.3",
+    "colorette": "^2.0.20"
   }
 }
