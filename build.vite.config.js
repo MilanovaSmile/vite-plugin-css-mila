@@ -1,6 +1,6 @@
 import path from 'path';
 import { defineConfig } from 'vite';
-import { CssMila } from './src/index.js';
+import CssMila from './src/index.js';
 
 export default defineConfig({
     root: './src',
