@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { cyan, green, red, dim, bold } from 'colorette';
 import CleanCSS from 'clean-css';
 
-const VERSION = cyan('CssMila v2.0.5');
+const VERSION = cyan('CssMila v2.0.6');
 
 let OPTIONS;
 let CONFIG;
@@ -138,7 +138,7 @@ export default function CssMila (options) {
 
                 if (options.verbose !== false) {
                     printLog(resultList, options.outDir);
-                    console.log(green('✓ built in ' + Math.ceil(performance.now() - buildTime) + 'ms\n'));
+                    console.log(green('✓ built in ' + Math.ceil(performance.now() - buildTime) + 'ms'));
                 }
                 //------------------------------------------------------------------------------------------------------
             }
