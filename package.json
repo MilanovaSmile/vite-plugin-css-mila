@@ -29,7 +29,7 @@
     "build": "vite build --config build.vite.config.js"
   },
   "devDependencies": {
-    "vite": "^5.2.2"
+    "vite": "^5.2.9"
   },
   "peerDependencies": {},
   "dependencies": {
