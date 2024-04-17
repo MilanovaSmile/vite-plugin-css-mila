@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { cyan, green, red, dim, bold } from 'colorette';
 import CleanCSS from 'clean-css';
 
-const VERSION = cyan('CssMila v2.0.6');
+const VERSION = cyan('CssMila v2.0.7');
 
 let OPTIONS;
 let CONFIG;
@@ -86,7 +86,7 @@ export default function CssMila (options) {
 
                     process.stdout.clearLine();
                     process.stdout.cursorTo(0);
-                    process.stdout.write(`transforming (${index}) ${key}`);
+                    process.stdout.write(`transforming (${index}) ` + dim(key));
 
                     try {
                         let src = {
