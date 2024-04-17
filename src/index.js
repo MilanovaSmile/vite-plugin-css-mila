@@ -1,11 +1,9 @@
-'use strict';
-
 import path from 'path';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { cyan, green, red, dim, bold } from 'colorette';
 import CleanCSS from 'clean-css';
 
-const VERSION = cyan('CssMila v' + process.env.npm_package_version);
+const VERSION = cyan('CssMila v2.0.5');
 
 let OPTIONS;
 let CONFIG;
@@ -22,7 +20,7 @@ export default function CssMila (options) {
         closeBundle: {
             order: 'pre',
             sequential: true,
-            async handler() {
+            async handler () {
                 // Print info.
                 //------------------------------------------------------------------------------------------------------
                 if (options.verbose !== false) console.log('\n' + cyan(VERSION) + green(' building...'));
@@ -53,7 +51,7 @@ export default function CssMila (options) {
                 // Check: targets.
                 //------------------------------------------------------------------------------------------------------
                 if (typeof options.targets !== 'object' || Array.isArray(options.targets)) {
-                    if (options.verbose !== false) console.log(red('targets is not an object!') + '\n')
+                    if (options.verbose !== false) console.log(red('targets is not an object!') + '\n');
 
                     return;
                 }
@@ -92,13 +90,13 @@ export default function CssMila (options) {
 
                     try {
                         let src = {
-                            file: path.resolve(CONFIG.root, key),
+                            file: path.resolve(options.targets[key]),
                             content: '',
                             size: 0
                         };
 
                         let dest = {
-                            file: path.resolve(CONFIG.root, options.outDir + options.targets[key]),
+                            file: path.resolve(CONFIG.root, options.outDir + key),
                             content: '',
                             size: 0
                         };
@@ -119,13 +117,13 @@ export default function CssMila (options) {
                         await writeFile(dest.file, dest.content);
 
                         resultList.push({
-                            file: options.targets[key],
+                            file: key,
                             srcSize: src.size,
                             destSize: dest.size
                         });
                     } catch (error) {
                         if (options.verbose !== false) {
-                            console.log(red(`File: ${key}`));
+                            console.log(red(`\nFile: ${key}`));
                             console.log(red(error));
                         }
                     }
@@ -149,25 +147,32 @@ export default function CssMila (options) {
 }
 
 function printLog (resultList, outDir) {
-    function getMaxFileNameLength (targets) {
-        let max = 0;
-
-        targets.forEach(element => {
-           if (element.file.length > max) max = element.file.length;
-        });
-
-        return max;
-    }
-
-    let maxFileNameLength = getMaxFileNameLength(resultList);
+    let maxLengthFile = 0;
+    let maxLengthSrcSize = 0;
+    let maxLengthDestSize = 0;
 
     resultList.forEach(element => {
-        while (element.file.length < maxFileNameLength) {
-            element.file += ' ';
-        }
+        if (element.file.length > maxLengthFile) maxLengthFile = element.file.length;
 
         element.srcSize = (element.srcSize / 1000).toFixed(2);
         element.destSize = (element.destSize / 1000).toFixed(2);
+
+        if (element.srcSize.length > maxLengthSrcSize) maxLengthSrcSize = element.srcSize.length;
+        if (element.destSize.length > maxLengthDestSize) maxLengthDestSize = element.destSize.length;
+    });
+
+    resultList.forEach(element => {
+        while (element.file.length < maxLengthFile) {
+            element.file += ' ';
+        }
+
+        while (element.srcSize.length < maxLengthSrcSize) {
+            element.srcSize = ' ' + element.srcSize;
+        }
+
+        while (element.destSize.length < maxLengthDestSize) {
+            element.destSize = ' ' + element.destSize;
+        }
 
         console.log(dim(outDir) + cyan(element.file) + '  ' + dim(bold(element.srcSize + ' kB') + ' │ gzip: ' + element.destSize + ' kB'));
     });
@@ -195,7 +200,7 @@ function replacePathWithAbsolutPath (css, src) {
 }
 
 async function minifyCSS (src, options) {
-    return await new Promise((resolve) => {
+    return await new Promise(resolve => {
         new CleanCSS(options).minify(src, (error, output) => {
             return resolve(output);
         });

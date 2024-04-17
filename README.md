@@ -52,8 +52,8 @@ export default defineConfig ({
      * Default: {}.
      */
     targets: {
-        'target1.css'        : 'target1.css',
-        'example/target2.css': 'example/target2.css'
+        'target.css'        : 'source.css',
+        'example/target.css': 'example/source.css'
     }
 }
 ```

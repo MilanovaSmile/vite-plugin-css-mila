@@ -9,13 +9,12 @@ export default defineConfig({
     plugins: [
         CssMila({
             outDir: '../dist-example',
-            minify: true,
             minifyOptions: {
                 inline: ['local']
             },
             targets: {
-                'index.css'        : 'index1.css',
-                'fourth/fourth.css': 'second.css'
+                'index.css'     : './example/index.css',
+                'the/second.css': './example/fourth/fourth.css'
             }
         })
     ]
