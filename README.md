@@ -12,7 +12,7 @@ yarn add -D vite-plugin-css-mila
 
 ```javascript
 import { defineConfig } from 'vite';
-import { HtmlMila } from 'vite-plugin-html-mila';
+import CssMila from 'vite-plugin-css-mila';
 
 export default defineConfig ({
     /**
@@ -32,7 +32,7 @@ export default defineConfig ({
 ```javascript
 {
     /**
-     * Write debug to console.
+     * Write output to console.
      * Default: true.
      */
     verbose: true,
@@ -43,26 +43,17 @@ export default defineConfig ({
      */
     outDir: '../dist',
 
-    /**
-     * Minify CSS file from targets.
-     * Default: true.
-     */
-    minify: true,
-
     /** Clean-CSS minify options, https://github.com/clean-css/clean-css
      */
     minifyOptions: {},
 
     /**
      * List of files to process.
-     * src - path relative to the "root" variable.
-     * dest - path relative to "outDir" variable.
-     * src, dest - can only contain a string!
-     * Default: [].
+     * Default: {}.
      */
-    targets: [
-        { src: 'target1.html',         dest: 'target1.html' },
-        { src: 'example/target2.html', dest: 'example/target2.html' }
-    ]
+    targets: {
+        'target1.css'        : 'target1.css',
+        'example/target2.css': 'example/target2.css'
+    }
 }
 ```

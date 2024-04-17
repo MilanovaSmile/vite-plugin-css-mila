@@ -5,130 +5,172 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { cyan, green, red, dim, bold } from 'colorette';
 import CleanCSS from 'clean-css';
 
-const OPTIONS = {
-    verbose: true,
-    minify: true,
-    outDir: '',
-    minifyOptions: {},
-    targets: []
-};
+const VERSION = cyan('CssMila v' + process.env.npm_package_version);
 
-const TARGET = {
-    src: '',
-    dest: ''
-}
+let OPTIONS;
+let CONFIG;
 
-export function CssMila (options = OPTIONS) {
-    let config = undefined;
-
-    options = checkOptions(options);
-
-    if (options.outDir.length === 1) {
-        console.log(`${red('CssMila: outDir is not valid!')}`);
-        return;
-    }
+export default function CssMila (options) {
+    OPTIONS = options;
 
     return {
         name: 'vite-plugin-css-mila',
+        enforce: 'pre',
         configResolved(extConfig) {
-            config = extConfig;
+            CONFIG = extConfig;
         },
-        async closeBundle () {
-            if (options.targets.length === 0) return;
+        closeBundle: {
+            order: 'pre',
+            sequential: true,
+            async handler() {
+                // Print info.
+                //------------------------------------------------------------------------------------------------------
+                if (options.verbose !== false) console.log('\n' + cyan(VERSION) + green(' building...'));
+                //------------------------------------------------------------------------------------------------------
 
-            await new Promise((resolve) => {
-                setTimeout(() => resolve(), 1);
-            });
+                // Check: outDir.
+                //------------------------------------------------------------------------------------------------------
+                if (typeof options.outDir !== 'string') {
+                    if (options.verbose !== false) console.log(red('outDir is not valid!') + '\n');
 
-            let buildTime = performance.now();
-            let maxFileNameLength = 0;
-
-            options.targets.forEach(target => {
-                if (maxFileNameLength < target.dest.length) maxFileNameLength = target.dest.length
-            });
-
-            if (options.verbose) console.log(green('\ncss-mila working...'));
-
-            for (let target of options.targets) {
-                try {
-                    let src  = path.resolve(config.root, target.src);
-                    let dest = path.resolve(config.root, options.outDir + target.dest);
-
-                    let srcSize  = 0;
-                    let destSize = 0;
-
-                    await mkdir(dest.substring(0, dest.lastIndexOf("/")), {recursive: true});
-
-                    let css = await readFile(src, 'utf8');
-
-                    css = replacePathWithAbsolutPath(css, src);
-
-                    if (options.minify) {
-                        let resultObject = await minifyCSS(css, options.minifyOptions);
-
-                        css = resultObject.styles;
-                        srcSize = resultObject.stats.originalSize;
-                        destSize = resultObject.stats.minifiedSize;
-                    }
-
-                    await writeFile(dest, css);
-
-                    if (options.verbose) printLog(options.outDir, target.dest, srcSize, destSize, maxFileNameLength)
-                } catch (e) {
-                    console.log((`${options.outDir}${cyan(target.dest)} ${red('FAIL')}`));
+                    return;
                 }
-            }
 
-            if (options.verbose) console.log(green('✓ built in ' + Math.ceil(performance.now() - buildTime) + 'ms'));
-        }
-    }
-}
+                switch (options.outDir.length) {
+                    case 0:
+                        break;
 
-function checkOptions (options) {
-    let result = Object.assign({}, OPTIONS);
-
-    for (let key in OPTIONS) {
-        switch (true) {
-            case ['boolean', 'string'].includes(typeof OPTIONS[key]):
-                if (typeof options[key] === typeof OPTIONS[key]) result[key] = options[key];
-                if (key === 'outDir' && result.outDir[result.outDir.length - 1] !== '/') result.outDir += '/';
-                break;
-
-            case typeof OPTIONS[key] === 'object' && Array.isArray(OPTIONS[key]) && typeof options[key] === 'object' && Array.isArray(options[key]):
-                switch (key) {
-                    case 'targets':
-                        options.targets.forEach(element => {
-                            if (typeof element === 'object' && !Array.isArray(element)) {
-                                let resultTarget = Object.assign({}, TARGET);
-
-                                for (let objectKey in TARGET) {
-                                    if (typeof element[objectKey] === typeof TARGET[objectKey]) resultTarget[objectKey] = element[objectKey];
-                                }
-
-                                result.targets.push(resultTarget);
-                            }
-                        });
+                    case 1:
+                        if (options.outDir === '/') options.outDir = '';
                         break;
 
                     default:
-                        result[key] = options[key];
+                        if (options.outDir.startsWith('/')) options.outDir = options.outDir.slice(1);
+                        if (!options.outDir.endsWith('/')) options.outDir = options.outDir + '/';
                 }
-                break
+                //------------------------------------------------------------------------------------------------------
+
+                // Check: targets.
+                //------------------------------------------------------------------------------------------------------
+                if (typeof options.targets !== 'object' || Array.isArray(options.targets)) {
+                    if (options.verbose !== false) console.log(red('targets is not an object!') + '\n')
+
+                    return;
+                }
+
+                if (Object.keys(options.targets).length === 0) {
+                    if (options.verbose !== false) console.log(red('targets is empty!') + '\n');
+
+                    return;
+                }
+
+                for (let key in options.targets) {
+                    if (typeof options.targets[key] !== 'string') {
+                        if (options.verbose !== false) console.log(red(`targets key "${key}" is not a string!`) + '\n');
+
+                        return;
+                    }
+                }
+                //------------------------------------------------------------------------------------------------------
+
+                // Start.
+                //------------------------------------------------------------------------------------------------------
+                let buildTime = performance.now();
+                //------------------------------------------------------------------------------------------------------
+
+                let resultList = [];
+                let index = 0;
+
+                // Work.
+                //------------------------------------------------------------------------------------------------------
+                for (let key in options.targets) {
+                    index += 1;
+
+                    process.stdout.clearLine();
+                    process.stdout.cursorTo(0);
+                    process.stdout.write(`transforming (${index}) ${key}`);
+
+                    try {
+                        let src = {
+                            file: path.resolve(CONFIG.root, key),
+                            content: '',
+                            size: 0
+                        };
+
+                        let dest = {
+                            file: path.resolve(CONFIG.root, options.outDir + options.targets[key]),
+                            content: '',
+                            size: 0
+                        };
+
+                        await mkdir(dest.file.substring(0, dest.file.lastIndexOf('/')), { recursive: true });
+
+                        src.content = await readFile(src.file, 'utf8');
+
+                        src.content = replacePathWithAbsolutPath(src.content, src.file);
+
+                        let result = await minifyCSS(src.content, options.minifyOptions);
+
+                        src.size = result.stats.originalSize;
+
+                        dest.content = result.styles;
+                        dest.size = result.stats.minifiedSize;
+
+                        await writeFile(dest.file, dest.content);
+
+                        resultList.push({
+                            file: options.targets[key],
+                            srcSize: src.size,
+                            destSize: dest.size
+                        });
+                    } catch (error) {
+                        if (options.verbose !== false) {
+                            console.log(red(`File: ${key}`));
+                            console.log(red(error));
+                        }
+                    }
+                }
+                //------------------------------------------------------------------------------------------------------
+
+                // End.
+                //------------------------------------------------------------------------------------------------------
+                process.stdout.clearLine();
+                process.stdout.cursorTo(0);
+                process.stdout.write(green('✓ ') + index + ` ${index === 1 ? 'file' : 'files'} transformed.\n`);
+
+                if (options.verbose !== false) {
+                    printLog(resultList, options.outDir);
+                    console.log(green('✓ built in ' + Math.ceil(performance.now() - buildTime) + 'ms\n'));
+                }
+                //------------------------------------------------------------------------------------------------------
+            }
         }
     }
-
-    return result;
 }
 
-function printLog (outDir, fileName, srcSize, destSize, maxFileNameLength) {
-    while (fileName.length < maxFileNameLength) {
-        fileName += ' ';
+function printLog (resultList, outDir) {
+    function getMaxFileNameLength (targets) {
+        let max = 0;
+
+        targets.forEach(element => {
+           if (element.file.length > max) max = element.file.length;
+        });
+
+        return max;
     }
 
-    srcSize = (srcSize / 1000).toFixed(2);
-    destSize = (destSize / 1000).toFixed(2);
+    let maxFileNameLength = getMaxFileNameLength(resultList);
 
-    console.log(dim(outDir) + cyan(fileName) + '  ' + dim(bold(srcSize + ' kB') + ' │ gzip: ' + destSize + ' kB'));
+    resultList.forEach(element => {
+        while (element.file.length < maxFileNameLength) {
+            element.file += ' ';
+        }
+
+        element.srcSize = (element.srcSize / 1000).toFixed(2);
+        element.destSize = (element.destSize / 1000).toFixed(2);
+
+        console.log(dim(outDir) + cyan(element.file) + '  ' + dim(bold(element.srcSize + ' kB') + ' │ gzip: ' + element.destSize + ' kB'));
+    });
 }
 
 function replacePathWithAbsolutPath (css, src) {
@@ -153,7 +195,7 @@ function replacePathWithAbsolutPath (css, src) {
 }
 
 async function minifyCSS (src, options) {
-    return await new Promise((resolve, reject) => {
+    return await new Promise((resolve) => {
         new CleanCSS(options).minify(src, (error, output) => {
             return resolve(output);
         });
