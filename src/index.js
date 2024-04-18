@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { cyan, green, red, dim, bold } from 'colorette';
 import CleanCSS from 'clean-css';
 
-const VERSION = cyan('CssMila v2.0.7');
+const VERSION = cyan('CssMila v2.0.10');
 
 let OPTIONS;
 let CONFIG;
@@ -84,9 +84,15 @@ export default function CssMila (options) {
                 for (let key in options.targets) {
                     index += 1;
 
-                    process.stdout.clearLine();
-                    process.stdout.cursorTo(0);
-                    process.stdout.write(`transforming (${index}) ` + dim(key));
+                    if (options.verbose !== false) {
+                        if (process.stdout.isTTY) {
+                            process.stdout.clearLine();
+                            process.stdout.cursorTo(0);
+                            process.stdout.write(`transforming (${index}) ` + dim(key));
+                        } else if (index === 1) {
+                            console.log('transforming...');
+                        }
+                    }
 
                     try {
                         let src = {
@@ -132,9 +138,15 @@ export default function CssMila (options) {
 
                 // End.
                 //------------------------------------------------------------------------------------------------------
-                process.stdout.clearLine();
-                process.stdout.cursorTo(0);
-                process.stdout.write(green('✓ ') + index + ` ${index === 1 ? 'file' : 'files'} transformed.\n`);
+                if (options.verbose !== false) {
+                    if (process.stdout.isTTY) {
+                        process.stdout.clearLine();
+                        process.stdout.cursorTo(0);
+                        process.stdout.write(green('✓ ') + index + ` ${index === 1 ? 'file' : 'files'} transformed.\n`);
+                    } else {
+                        console.log(`✓ ${index} ${index === 1 ? 'file' : 'files'} transformed.`);
+                    }
+                }
 
                 if (options.verbose !== false) {
                     printLog(resultList, options.outDir);

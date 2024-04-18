@@ -1,7 +1,7 @@
 {
   "name": "vite-plugin-css-mila",
   "private": false,
-  "version": "2.0.7",
+  "version": "2.0.10",
   "description": "Vite plugin to minify CSS",
   "author": "Milana Kustinskaya <milanovasmile@gmail.com>",
   "license": "MIT",
